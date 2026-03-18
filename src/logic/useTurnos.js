@@ -7,51 +7,43 @@ export const useTurnos = () => {
 
   useEffect(() => {
     const fData = JSON.parse(localStorage.getItem('funcionarios')) || [];
-    let aData = JSON.parse(localStorage.getItem('asignaciones')) || [];
-
-    // --- LÓGICA DE AUTO-LIMPIEZA (6 MESES) ---
-    const limiteHistorial = startOfMonth(subMonths(new Date(), 6));
-    
-    const asignacionesFiltradas = aData.filter(asig => {
-      const fechaAsig = new Date(asig.fecha + "T00:00:00");
-      return !isBefore(fechaAsig, limiteHistorial);
-    });
-
-    if (asignacionesFiltradas.length !== aData.length) {
-      localStorage.setItem('asignaciones', JSON.stringify(asignacionesFiltradas));
-    }
-
+    const aData = JSON.parse(localStorage.getItem('asignaciones')) || [];
+    const limite = startOfMonth(subMonths(new Date(), 6));
+    const filtrados = aData.filter(asig => !isBefore(new Date(asig.fecha + "T00:00:00"), limite));
     setFuncionarios(fData);
-    setAsignaciones(asignacionesFiltradas);
+    setAsignaciones(filtrados);
   }, []);
+
+  const guardarTodo = (f, a) => {
+    setFuncionarios(f);
+    setAsignaciones(a);
+    localStorage.setItem('funcionarios', JSON.stringify(f));
+    localStorage.setItem('asignaciones', JSON.stringify(a));
+  };
 
   const agregarTurnos = (id, nombre, fechas) => {
     const nuevos = fechas.map(f => {
-      const fechaObj = new Date(f + "T00:00:00");
-      const esFinde = [0, 6].includes(fechaObj.getDay());
+      const fObj = new Date(f + "T00:00:00");
+      const esFinde = [0, 6].includes(fObj.getDay());
       return { 
-        fecha: f, 
-        id, 
-        nombre, 
-        mesReferencia: format(fechaObj, 'yyyy-MM'), // Clave para separar meses
+        fecha: f, id, nombre, 
+        mesReferencia: format(fObj, 'yyyy-MM'),
         parte: esFinde ? "Fin de Semana" : "Entre Semana", 
         horas: esFinde ? 11 : 2 
       };
     });
-
-    // Filtramos para evitar duplicados en la misma fecha
-    const fechasNuevas = fechas;
-    const asignacionesLimpias = asignaciones.filter(a => !fechasNuevas.includes(a.fecha));
-    
-    const resultado = [...asignacionesLimpias, ...nuevos];
-    setAsignaciones(resultado);
-    localStorage.setItem('asignaciones', JSON.stringify(resultado));
+    const limpia = asignaciones.filter(a => !fechas.includes(a.fecha));
+    guardarTodo(funcionarios, [...limpia, ...nuevos]);
   };
 
-  const guardarFuncionario = (nuevo) => {
-    const actualizados = [...funcionarios, nuevo];
-    setFuncionarios(actualizados);
-    localStorage.setItem('funcionarios', JSON.stringify(actualizados));
+  const eliminarFuncionario = (id) => {
+    guardarTodo(funcionarios.filter(f => f[0] !== id), asignaciones.filter(a => a.id !== id));
+  };
+
+  const editarFuncionario = (id, nuevoNombre) => {
+    const fNuevos = funcionarios.map(f => f[0] === id ? [id, nuevoNombre, f[2]] : f);
+    const aNuevas = asignaciones.map(a => a.id === id ? { ...a, nombre: nuevoNombre } : a);
+    guardarTodo(fNuevos, aNuevas);
   };
 
   const intercambiar = (f1, f2) => {
@@ -59,16 +51,11 @@ export const useTurnos = () => {
     const i1 = copia.findIndex(a => a.fecha === f1);
     const i2 = copia.findIndex(a => a.fecha === f2);
     if (i1 === -1 || i2 === -1) return;
-
     const temp = { id: copia[i1].id, nombre: copia[i1].nombre };
-    copia[i1].id = copia[i2].id;
-    copia[i1].nombre = copia[i2].nombre;
-    copia[i2].id = temp.id;
-    copia[i2].nombre = temp.nombre;
-
-    setAsignaciones(copia);
-    localStorage.setItem('asignaciones', JSON.stringify(copia));
+    copia[i1].id = copia[i2].id; copia[i1].nombre = copia[i2].nombre;
+    copia[i2].id = temp.id; copia[i2].nombre = temp.nombre;
+    guardarTodo(funcionarios, copia);
   };
 
-  return { funcionarios, asignaciones, agregarTurnos, intercambiar, guardarFuncionario };
+  return { funcionarios, asignaciones, agregarTurnos, eliminarFuncionario, editarFuncionario, intercambiar, setFuncionarios };
 };
