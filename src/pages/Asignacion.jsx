@@ -5,7 +5,8 @@ import { es } from 'date-fns/locale';
 import { ArrowRightLeft, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Asignacion = () => {
-  const { funcionarios, asignaciones, agregarTurnos, intercambiar } = useTurnos();
+  // Añadimos 'guardarTodo' aquí para poder liberar días
+  const { funcionarios, asignaciones, agregarTurnos, intercambiar, guardarTodo } = useTurnos();
   const [user, setUser] = useState(null);
   const [modo, setModo] = useState('NORMAL');
   const [seleccion, setSeleccion] = useState([]);
@@ -14,18 +15,49 @@ const Asignacion = () => {
   const dias = eachDayOfInterval({ start: startOfMonth(mesActual), end: endOfMonth(mesActual) });
 
   const clicDia = (fStr) => {
-    if (!user && modo === 'NORMAL') return alert("Selecciona un funcionario primero.");
     const t = asignaciones.find(a => a.fecha === fStr);
+
+    // MODO CANJE (Intercambio de días)
     if (modo === 'CANJE') {
       if (!t || seleccion.includes(fStr)) return;
       const n = [...seleccion, fStr];
       setSeleccion(n);
-      if (n.length === 2) { intercambiar(n[0], n[1]); setSeleccion([]); setModo('NORMAL'); }
-    } else {
-      if (t && t.id !== user?.id) return;
-      setSeleccion(prev => prev.includes(fStr) ? prev.filter(s => s !== fStr) : [...prev, fStr]);
+      if (n.length === 2) {
+        intercambiar(n[0], n[1]);
+        setSeleccion([]);
+        setModo('NORMAL');
+      }
+      return;
     }
-  };
+
+    // MODO NORMAL
+    // 1. Si el día ya está seleccionado en la tanda actual (azul), lo quitamos
+    if (seleccion.includes(fStr)) {
+      setSeleccion(prev => prev.filter(s => s !== fStr));
+      return;
+    }
+
+    // 2. Liberar día ocupado (Si no hay nada seleccionado y el día tiene dueño)
+    if (t && seleccion.length === 0) {
+      const confirmar = window.confirm(`¿Quieres liberar el día ${format(new Date(fStr + "T00:00:00"), 'dd/MM')} de ${t.nombre}?`);
+      if (confirmar) {
+        const nuevasAsignaciones = asignaciones.filter(a => a.fecha !== fStr);
+        guardarTodo(funcionarios, nuevasAsignaciones);
+      }
+      return;
+    }
+
+    // 3. Asignar nuevo día
+    if (user) {
+      if (t && t.id !== user.id) {
+        alert("Día ocupado. Libéralo primero para cambiarlo.");
+        return;
+      }
+      setSeleccion(prev => [...prev, fStr]);
+    } else {
+      alert("Selecciona un funcionario o toca un día ocupado para liberarlo.");
+    }
+  }; // Aquí cerraba bien la función
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-40">
@@ -65,6 +97,7 @@ const Asignacion = () => {
       </div>
 
       <div className="fixed bottom-24 left-4 right-4 max-w-md mx-auto flex flex-col gap-3">
+        {/* Botón Cambiar Días con el icono centrado */}
         <button onClick={() => {setModo(modo === 'NORMAL' ? 'CANJE' : 'NORMAL'); setSeleccion([]);}} 
           className={`w-full h-16 rounded-3xl font-black shadow-xl flex items-center justify-center gap-3 transition-all ${modo === 'CANJE' ? 'bg-red-500 text-white' : 'bg-indigo-600 text-white'}`}>
           <ArrowRightLeft size={24}/>

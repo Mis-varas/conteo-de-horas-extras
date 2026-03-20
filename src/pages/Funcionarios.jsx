@@ -8,7 +8,13 @@ const Funcionarios = () => {
   const [editando, setEditando] = useState(null);
   const [nuevoNombre, setNuevoNombre] = useState('');
 
-  const randomColor = () => ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'][Math.floor(Math.random() * 6)];
+  const randomColor = () => {
+    const colors = [
+      '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
+      '#06b6d4', '#84cc16', '#f97316', '#a855f7', '#14b8a6', '#6366f1'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
 
   const handleAdd = (e) => {
     e.preventDefault();
