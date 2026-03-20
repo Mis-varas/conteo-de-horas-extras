@@ -10,8 +10,8 @@ const Funcionarios = () => {
 
   const randomColor = () => {
     const colors = [
-      '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
-      '#06b6d4', '#84cc16', '#f97316', '#a855f7', '#14b8a6', '#6366f1'
+      '#ce0d0ddd', '#0310bed9', '#049e04', '#f89100', '#f7fb01', 'rgb(173, 255, 33)',
+      '#0cebff', '#8715f8', '#f707ff', '#958193', '#479566', '#6366f1'
     ];
     return colors[Math.floor(Math.random() * colors.length)];
   };

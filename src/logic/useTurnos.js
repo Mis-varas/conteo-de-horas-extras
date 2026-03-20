@@ -57,5 +57,11 @@ export const useTurnos = () => {
     guardarTodo(funcionarios, copia);
   };
 
-  return { funcionarios, asignaciones, agregarTurnos, eliminarFuncionario, editarFuncionario, intercambiar, setFuncionarios };
+  const quitarTurno = (fecha) => {
+    const nuevasAsignaciones = asignaciones.filter(a => a.fecha !== fecha);
+    setAsignaciones(nuevasAsignaciones); // Esto "despinta" el calendario al instante
+    localStorage.setItem('asignaciones', JSON.stringify(nuevasAsignaciones));
+  };
+
+  return { funcionarios, asignaciones, agregarTurnos, eliminarFuncionario, editarFuncionario, intercambiar, setFuncionarios,quitarTurno};
 };
